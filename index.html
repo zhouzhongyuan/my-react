@@ -15,11 +15,21 @@
 
 
 <script>
-    function hello() {
-        alert('hello');
-    }
-    var element = React.createElement('div',{id:'test', onclick:hello}, 'click me');
-    React.render(element, document.getElementById('container'));
+    var HelloMessage = React.createClass({
+        getInitialState :function () {
+            return {type: 'say:'};
+        },
+        componentWillMount: function () {
+            console.log('我要开始渲染了');
+        },
+        componentDidMount: function () {
+            console.log('我已经渲染好了');
+        },
+        render: function () {
+            return React.createElement("div", null, this.state.type, "hello", this.props.name)
+        }
+    });
+    React.render(React.createElement(HelloMessage, {name:"John"}), document.getElementById("container"));
 </script>
 </body>
 </html>

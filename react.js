@@ -61,18 +61,54 @@ ReactDOMComponent.prototype.mountComponent = function (rootID) {
     })
 
     this._renderedChildren = childrenInstances;
-
-    return tagOpen + '>' + content + tagClose;
-    
-    
-    
-    
-    
     // All
+    return tagOpen + '>' + content + tagClose;
 }
 
+var ReactClass = function () {
+    
+}
+ReactClass.prototype.render = function () {
+
+}
+function ReactCompositeComponent(element) {
+    this._currentElement = element;
+    this._rootNodeID = null;
+    this._instance = null;
+}
+ReactCompositeComponent.prototype.mountComponent = function (rootID) {
+    this._rootNodeID = rootID;
+    // 拿到当前元素对应的属性值。
+    var publicProps = this._currentElement.props;
+    //拿到对应的ReactClass
+    var ReactClass = this._currentElement.type;
+
+    // initialize the public class
+    var inst = new ReactClass(publicProps);
+    this._instance = inst;
+    //保留对当前Component的医用，下面更新会用到
+    inst._reactInternalInstance = this;
+
+    if(inst.componentDidMount){
+        inst.componentWillMount();
+    }
+    // 调用ReactClass的实例的render方法，返回一个element或者文本节点
+    var renderedElement = this._instance.render();
+    // 根据element生成
+    var renderedComponentInstance = instantiateReactComponent(renderedElement);
+    this._renderedComponent = renderedComponentInstance; //存起来，备用。
+
+    //拿到轩然之后的字符串，将当前_rootNodeID传给render的节点。
+    var renderedMarkup = renderedComponentInstance.mountComponent(this._rootNodeID);
 
 
+    $(document).on('mountReady', function () {
+        inst.componentDidMount && inst.componentDidMount();
+    });
+    return renderedMarkup;
+
+
+}
 
 function instantiateReactComponent(node) {
     if(typeof node === 'string' || typeof node === 'number'){
@@ -81,11 +117,29 @@ function instantiateReactComponent(node) {
     if(typeof node === 'object' && typeof node.type === 'string'){
         return new ReactDOMComponent(node);
     }
+    if(typeof node === 'object' && typeof node.type === 'function'){
+        return new ReactCompositeComponent(node);
+    }
 }
 
 
 React = {
     nextReactRootIndex: 0,
+    createClass: function (spec) {
+        //生成一个子类
+        var Constructor = function (props) {
+            this.props = props;
+            this.state = this.getInitialState ? this.getInitialState() : null;
+        }
+
+        // 原型继承，继承超级父类
+        Constructor.prototype = new ReactClass();
+        Constructor.prototype.constructor = Constructor;
+
+        // Mixin spec
+        $.extend(Constructor.prototype, spec);
+        return Constructor;
+    },
     createElement: function (type, config, children) {
         var props = {};
         var propName;
