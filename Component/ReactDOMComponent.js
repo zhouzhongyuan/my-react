@@ -60,3 +60,57 @@ ReactDOMComponent.prototype.receiveComponent = function (nextElement) {
     // 更新子节点
     this._updateDOMChildren(nextElement.props.children);
 }
+
+ReactDOMComponent.prototype._updateDOMProperties = function (lastProps, nextProps) {
+    var propKey;
+
+
+    // 当老的属性不在新的属性集合里时，删除掉。
+    for(propKey in lastProps){
+        // 对于新props中有的，或者 不是ownProperty，跳过。
+        if(nextProps.hasOwnProperty(propKey) || !lastProps.hasOwnProperty(propKey)){
+            continue;
+        }
+        // 对于监听时间，去除监听。
+        if(/^on[A-Za-z]/.test(propKey)){
+            var eventType = propKey.replace('on', '');
+            $(document).undelegate(`[data-reactid="${this._rootNodeID}"]`, eventType, lastProps[propKey]);
+            continue;
+        }
+        // 对于普通不需要的属性，删除。
+        $(`[data-reactid="${this._rootNodeID}"]`).removeAttr(propKey);
+    }
+
+    // 把新属性添加到dom节点上。
+    for(propKey in nextProps){
+        // 对于监听事件，更新。
+        if(/^on[A-Za-z]/.test(propKey)){
+            const eventType = propKey.replace('on', '');
+            lastProps[propKey] && $(document).undelegate(`[data-reactid="${this._rootNodeID}"]`, eventType, lastProps[propKey]);
+            $(document).delegate('[data-reactid="' + this._rootNodeID + '"]', eventType + '.' + this._rootNodeID, props[property]);
+            continue;
+        }
+        // 对于children, 忽略。
+        if(propKey === 'children'){
+            continue;
+        }
+        // 对于普通property，更新。
+        $(`[data-reactid="${this._rootNodeID}"]`).prop(propKey, nextProps[propKey]);
+    }
+}
+
+// 全局更新深度标识
+var updateDepth = 0;
+// 全局更新队列， 所有的差异都存在这里。
+var diffQueue = [];
+
+ReactDOMComponent.prototype._updateDOMChildren = function (nextChildrenElement) {
+    updateDepth++;
+    this._diff(diffQueue, nextChildrenElement);
+    updateDepth--;
+    if(updateDepth === 0) {
+        //在需要的时候，调用patch，执行具体的dom操作。
+        this._patch(diffQueue);
+        diffQueue=[];
+    }
+}

@@ -11,6 +11,12 @@
 <div id="container"></div>
 
 <script src="./node_modules/jquery/dist/jquery.js"></script>
+
+<script src="Component/ReactDOMTextComponent.js"></script>
+<script src="Component/ReactDOMComponent.js"></script>
+<script src="Component/ReactCompositeComponent.js"></script>
+
+<script src="libs/shouldUpdateReactComponent.js"></script>
 <script src="react.js"></script>
 
 
@@ -30,6 +36,7 @@
         }
     });
     React.render(React.createElement(HelloMessage, {name:"John"}), document.getElementById("container"));
+    React.render(React.createElement('div', {id:"John"},'hah'), document.getElementById("container"));
 </script>
 </body>
 </html>
